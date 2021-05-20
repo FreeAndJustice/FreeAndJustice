@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="top.cxh.chat.mapper.CircleMapper">
+  <resultMap id="BaseResultMap" type="top.cxh.chat.bean.Circle">
+    <id column="circle_id" jdbcType="VARCHAR" property="circleId" />
+    <result column="context" jdbcType="VARCHAR" property="context" />
+    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    <result column="account" jdbcType="VARCHAR" property="account" />
+  </resultMap>
+  
+  <!-- 查询好友动态 -->
+  <resultMap id="getFriendsCircles" type="top.cxh.chat.bean.Circle">
+    <id column="circle_id" jdbcType="VARCHAR" property="circleId" />
+    <result column="context" jdbcType="VARCHAR" property="context" />
+    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    <result column="account" jdbcType="VARCHAR" property="account" />
+    <association property="userInfo" javaType="top.cxh.chat.bean.UserInfo">
+    	<id column="account" jdbcType="VARCHAR" property="account" />
+	    <result column="user_name" jdbcType="VARCHAR" property="userName" />
+	    <result column="user_image" jdbcType="VARCHAR" property="userImage" />
+	    <result column="user_email" jdbcType="VARCHAR" property="userEmail" />
+	    <result column="user_phone" jdbcType="VARCHAR" property="userPhone" />
+	    <result column="province" jdbcType="VARCHAR" property="province" />
+	    <result column="city" jdbcType="VARCHAR" property="city" />
+	    <result column="county" jdbcType="VARCHAR" property="county" />
+	    <result column="location" jdbcType="VARCHAR" property="location" />
+	    <result column="lng" jdbcType="DOUBLE" property="lng" />
+	    <result column="lat" jdbcType="VARCHAR" property="lat" />
+	    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    </association>
+    <collection property="circleImages" ofType="top.cxh.chat.bean.CircleImage" javaType="java.util.List" select="selectFriendCriclesChild" column="circle_id">
+	    
+    </collection>
+    <collection property="likeCircle" ofType="top.cxh.chat.bean.LikeCircle" javaType="java.util.List" select="selectLikeCircle" column="circle_id">
+	    
+    </collection>
+    <collection property="commentCircle" ofType="top.cxh.chat.bean.CommentCircle" javaType="java.util.List" select="selectCommentCircle" column="circle_id">
+	    
+    </collection>
+  </resultMap>
+  <resultMap id="getFriendsCirclesChild" type="top.cxh.chat.bean.CircleImage">
+    <id column="ci_id" jdbcType="INTEGER" property="id" />
+	<result column="image_name" jdbcType="VARCHAR" property="imageName" />
+	<result column="circle_id" jdbcType="VARCHAR" property="circleId" />
+  </resultMap>
+  <resultMap id="getLikeCircle" type="top.cxh.chat.bean.LikeCircle">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="account" jdbcType="VARCHAR" property="account" />
+  </resultMap>
+  <resultMap id="getCommentCircle" type="top.cxh.chat.bean.CommentCircle">
+    <id column="id" jdbcType="INTEGER" property="id" />
+  </resultMap>
+  <select id="selectFriendCricles" parameterType="java.util.Map" resultMap="getFriendsCircles">
+   	select c.circle_id, c.context, c.create_date, c.account,ui.*
+	from t_circle c join t_userinfo ui on c.account = ui.account
+	where c.account in (select friend_account from t_friends where t_friends.my_account = #{account,jdbcType=VARCHAR}) 
+	<if test="lastDate != null">
+		<![CDATA[ and c.create_date < #{lastDate,jdbcType=TIMESTAMP}]]>
+	</if>
+	<if test="nextDate != null">
+		<![CDATA[ and c.create_date > #{nextDate,jdbcType=TIMESTAMP}]]>
+	</if>
+	ORDER BY c.create_date DESC 
+	limit #{index,jdbcType=INTEGER},10
+  </select>
+  <select id="selectFriendCriclesChild" resultType="top.cxh.chat.bean.CircleImage" resultMap="getFriendsCirclesChild">
+   	select ci.id, ci.image_name, ci.circle_id 
+	from t_circleimage ci join t_circle c on ci.circle_id=c.circle_id
+	where ci.circle_id = #{circleId} 
+  </select>
+  <select id="selectLikeCircle" resultType="top.cxh.chat.bean.LikeCircle" resultMap="getLikeCircle">
+   	select lc.id, lc.account 
+	from t_like_circle lc join t_circle c on lc.circle_id=c.circle_id
+	where lc.circle_id = #{circleId} 
+  </select>
+  <select id="selectCommentCircle" resultType="top.cxh.chat.bean.CommentCircle" resultMap="getCommentCircle">
+   	select cc.id 
+	from t_comment_circle cc join t_circle c on cc.circle_id=c.circle_id
+	where cc.circle_id = #{circleId} 
+  </select>
+  <!-- END查询好友动态 -->
+  <sql id="Example_Where_Clause">
+    <where>
+      <foreach collection="oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause">
+    <where>
+      <foreach collection="example.oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List">
+    circle_id, context, create_date, account
+  </sql>
+  <select id="selectByExample" parameterType="top.cxh.chat.bean.CircleExample" resultMap="BaseResultMap">
+    select
+    <if test="distinct">
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from t_circle
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null">
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from t_circle
+    where circle_id = #{circleId,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from t_circle
+    where circle_id = #{circleId,jdbcType=VARCHAR}
+  </delete>
+  <delete id="deleteByExample" parameterType="top.cxh.chat.bean.CircleExample">
+    delete from t_circle
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="top.cxh.chat.bean.Circle">
+    insert into t_circle (circle_id, context, create_date, 
+      account)
+    values (#{circleId,jdbcType=VARCHAR}, #{context,jdbcType=VARCHAR}, #{createDate,jdbcType=TIMESTAMP}, 
+      #{account,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="top.cxh.chat.bean.Circle">
+    insert into t_circle
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="circleId != null">
+        circle_id,
+      </if>
+      <if test="context != null">
+        context,
+      </if>
+      <if test="createDate != null">
+        create_date,
+      </if>
+      <if test="account != null">
+        account,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="circleId != null">
+        #{circleId,jdbcType=VARCHAR},
+      </if>
+      <if test="context != null">
+        #{context,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null">
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="account != null">
+        #{account,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="top.cxh.chat.bean.CircleExample" resultType="java.lang.Long">
+    select count(*) from t_circle
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map">
+    update t_circle
+    <set>
+      <if test="record.circleId != null">
+        circle_id = #{record.circleId,jdbcType=VARCHAR},
+      </if>
+      <if test="record.context != null">
+        context = #{record.context,jdbcType=VARCHAR},
+      </if>
+      <if test="record.createDate != null">
+        create_date = #{record.createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.account != null">
+        account = #{record.account,jdbcType=VARCHAR},
+      </if>
+    </set>
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map">
+    update t_circle
+    set circle_id = #{record.circleId,jdbcType=VARCHAR},
+      context = #{record.context,jdbcType=VARCHAR},
+      create_date = #{record.createDate,jdbcType=TIMESTAMP},
+      account = #{record.account,jdbcType=VARCHAR}
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="top.cxh.chat.bean.Circle">
+    update t_circle
+    <set>
+      <if test="context != null">
+        context = #{context,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null">
+        create_date = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="account != null">
+        account = #{account,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where circle_id = #{circleId,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="top.cxh.chat.bean.Circle">
+    update t_circle
+    set context = #{context,jdbcType=VARCHAR},
+      create_date = #{createDate,jdbcType=TIMESTAMP},
+      account = #{account,jdbcType=VARCHAR}
+    where circle_id = #{circleId,jdbcType=VARCHAR}
+  </update>
+</mapper>

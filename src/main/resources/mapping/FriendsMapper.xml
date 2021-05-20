@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="top.cxh.chat.mapper.FriendsMapper">
+  <resultMap id="BaseResultMap" type="top.cxh.chat.bean.Friends">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="my_account" jdbcType="VARCHAR" property="myAccount" />
+    <result column="friend_account" jdbcType="VARCHAR" property="friendAccount" />
+    <result column="friend_name" jdbcType="VARCHAR" property="friendName" />
+    <result column="friend_group" jdbcType="INTEGER" property="friendGroup" />
+    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+  </resultMap>
+   <!-- 查询我的好友信息 -->
+  <resultMap id="getMyFriendsByAccount" type="top.cxh.chat.bean.Friends">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="my_account" jdbcType="VARCHAR" property="myAccount" />
+    <result column="friend_account" jdbcType="VARCHAR" property="friendAccount" />
+    <result column="friend_name" jdbcType="VARCHAR" property="friendName" />
+     <result column="friend_group" jdbcType="INTEGER" property="friendGroup" />
+    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    <association property="myFriends" javaType="top.cxh.chat.bean.UserInfo">
+    	<id column="account" jdbcType="VARCHAR" property="account" />
+	    <result column="user_name" jdbcType="VARCHAR" property="userName" />
+	    <result column="user_image" jdbcType="VARCHAR" property="userImage" />
+	    <result column="user_email" jdbcType="VARCHAR" property="userEmail" />
+	    <result column="user_phone" jdbcType="VARCHAR" property="userPhone" />
+	    <result column="province" jdbcType="VARCHAR" property="province" />
+	    <result column="city" jdbcType="VARCHAR" property="city" />
+	    <result column="county" jdbcType="VARCHAR" property="county" />
+	    <result column="location" jdbcType="VARCHAR" property="location" />
+	    <result column="lng" jdbcType="DOUBLE" property="lng" />
+	    <result column="lat" jdbcType="VARCHAR" property="lat" />
+	    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    </association>
+  </resultMap>
+  <select id="selectMyFriendsByAccount" parameterType="java.lang.String" resultMap="getMyFriendsByAccount">
+    select f.id, f.my_account, f.friend_account, f.friend_name,f.friend_group, f.create_date,u.account, u.user_name, u.user_image, 
+    	u.user_email, u.user_phone, u.province, u.city, u.county, u.location,u.lng, u.lat, u.create_date 
+	from t_friends as f LEFT JOIN t_userinfo u on f.friend_account = u.account 
+	where f.my_account = #{account,jdbcType=VARCHAR} and f.friend_account != #{account,jdbcType=VARCHAR}
+	ORDER BY u.user_name
+  </select>
+  <!-- END查询我的好友信息 -->
+  
+  <!-- 搜索好友——自己的好友 -->
+  <select id="selectMyFriendsByKeys" parameterType="java.util.Map" resultMap="getMyFriendsByAccount">
+    select f.id, f.my_account, f.friend_account, f.friend_name,f.friend_group, f.create_date,u.account, u.user_name, u.user_image, 
+    	u.user_email, u.user_phone, u.province, u.city, u.county, u.location,u.lng, u.lat, u.create_date 
+	from t_friends as f LEFT JOIN t_userinfo u on f.friend_account = u.account 
+    where f.my_account = #{myAccount,jdbcType=VARCHAR} and f.friend_account != #{myAccount,jdbcType=VARCHAR} and (u.account like  CONCAT(CONCAT('%', #{keys,jdbcType=VARCHAR}), '%') or u.user_name like CONCAT(CONCAT('%', #{keys,jdbcType=VARCHAR}), '%'))
+  </select>
+  <!-- END搜索好友 ——自己的好友 -->
+  
+  <!-- 查询朋友圈信息 -->
+  <resultMap id="getCircleByAccount" type="top.cxh.chat.bean.Friends">
+    <id column="f_id" jdbcType="INTEGER" property="id" />
+    <result column="my_account" jdbcType="VARCHAR" property="myAccount" />
+    <result column="friend_account" jdbcType="VARCHAR" property="friendAccount" />
+    <result column="friend_name" jdbcType="VARCHAR" property="friendName" />
+    <result column="friend_group" jdbcType="INTEGER" property="friendGroup" />
+    <result column="f_date" jdbcType="TIMESTAMP" property="createDate" />
+    <collection property="circles" ofType="top.cxh.chat.bean.Circle">
+    	<id column="circle_id" jdbcType="VARCHAR" property="circleId" />
+	    <result column="context" jdbcType="VARCHAR" property="context" />
+	    <result column="c_date" jdbcType="TIMESTAMP" property="createDate" />
+	    <result column="account" jdbcType="VARCHAR" property="account" />
+	    <collection property="circleImages" ofType="top.cxh.chat.bean.CircleImage">
+	    	<id column="ci_id" jdbcType="INTEGER" property="id" />
+		    <result column="image_name" jdbcType="VARCHAR" property="imageName" />
+		    <result column="circle_id" jdbcType="VARCHAR" property="circleId" />
+    	</collection>
+    </collection>
+  </resultMap>
+  <select id="selectMyCirclesByAccount" parameterType="java.lang.String" resultMap="getCircleByAccount">
+   	select f.id as f_id, f.my_account, f.friend_account, f.friend_name, f.friend_group, f.create_date as f_date,
+   			c.circle_id, c.context, c.create_date as c_date, c.account,
+   			ci.id as ci_id, ci.image_name, ci.circle_id 
+	from t_friends f LEFT JOIN t_circle c on f.friend_account=c.account LEFT JOIN t_circleimage ci on c.circle_id=ci.circle_id
+	where f.my_account = #{account,jdbcType=VARCHAR}
+	ORDER BY c.create_date DESC
+  </select>
+  <!-- 查询朋友圈信息 -->
+  
+  <!-- 修改备注名或分组 -->
+  <update id="updateByMyExample" parameterType="java.util.Map">
+    update t_friends
+    <set>
+      <if test="friendName != null">
+        friend_name = #{friendName,jdbcType=VARCHAR},
+      </if>
+      <if test="friendGroup != null">
+        friend_group = #{friendGroup,jdbcType=INTEGER},
+      </if>
+    </set>
+    where t_friends.my_account = #{myAccount,jdbcType=VARCHAR} and t_friends.friend_account = #{friendAccount,jdbcType=VARCHAR}
+  </update>
+  <!-- END修改备注名或分组 -->
+  
+  <sql id="Example_Where_Clause">
+    <where>
+      <foreach collection="oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause">
+    <where>
+      <foreach collection="example.oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List">
+    id, my_account, friend_account, friend_name, friend_group, create_date
+  </sql>
+  <select id="selectByExample" parameterType="top.cxh.chat.bean.FriendsExample" resultMap="BaseResultMap">
+    select
+    <if test="distinct">
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from t_friends
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null">
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from t_friends
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_friends
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <delete id="deleteByExample" parameterType="top.cxh.chat.bean.FriendsExample">
+    delete from t_friends
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="top.cxh.chat.bean.Friends">
+    insert into t_friends (id, my_account, friend_account, 
+      friend_name, friend_group, create_date
+      )
+    values (#{id,jdbcType=INTEGER}, #{myAccount,jdbcType=VARCHAR}, #{friendAccount,jdbcType=VARCHAR}, 
+      #{friendName,jdbcType=VARCHAR}, #{friendGroup,jdbcType=INTEGER}, #{createDate,jdbcType=TIMESTAMP}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="top.cxh.chat.bean.Friends">
+    insert into t_friends
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="myAccount != null">
+        my_account,
+      </if>
+      <if test="friendAccount != null">
+        friend_account,
+      </if>
+      <if test="friendName != null">
+        friend_name,
+      </if>
+      <if test="friendGroup != null">
+        friend_group,
+      </if>
+      <if test="createDate != null">
+        create_date,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="myAccount != null">
+        #{myAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="friendAccount != null">
+        #{friendAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="friendName != null">
+        #{friendName,jdbcType=VARCHAR},
+      </if>
+      <if test="friendGroup != null">
+        #{friendGroup,jdbcType=INTEGER},
+      </if>
+      <if test="createDate != null">
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="top.cxh.chat.bean.FriendsExample" resultType="java.lang.Long">
+    select count(*) from t_friends
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map">
+    update t_friends
+    <set>
+      <if test="record.id != null">
+        id = #{record.id,jdbcType=INTEGER},
+      </if>
+      <if test="record.myAccount != null">
+        my_account = #{record.myAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="record.friendAccount != null">
+        friend_account = #{record.friendAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="record.friendName != null">
+        friend_name = #{record.friendName,jdbcType=VARCHAR},
+      </if>
+      <if test="record.friendGroup != null">
+        friend_group = #{record.friendGroup,jdbcType=INTEGER},
+      </if>
+      <if test="record.createDate != null">
+        create_date = #{record.createDate,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map">
+    update t_friends
+    set id = #{record.id,jdbcType=INTEGER},
+      my_account = #{record.myAccount,jdbcType=VARCHAR},
+      friend_account = #{record.friendAccount,jdbcType=VARCHAR},
+      friend_name = #{record.friendName,jdbcType=VARCHAR},
+      friend_group = #{record.friendGroup,jdbcType=INTEGER},
+      create_date = #{record.createDate,jdbcType=TIMESTAMP}
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="top.cxh.chat.bean.Friends">
+    update t_friends
+    <set>
+      <if test="myAccount != null">
+        my_account = #{myAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="friendAccount != null">
+        friend_account = #{friendAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="friendName != null">
+        friend_name = #{friendName,jdbcType=VARCHAR},
+      </if>
+      <if test="friendGroup != null">
+        friend_group = #{friendGroup,jdbcType=INTEGER},
+      </if>
+      <if test="createDate != null">
+        create_date = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="top.cxh.chat.bean.Friends">
+    update t_friends
+    set my_account = #{myAccount,jdbcType=VARCHAR},
+      friend_account = #{friendAccount,jdbcType=VARCHAR},
+      friend_name = #{friendName,jdbcType=VARCHAR},
+      friend_group = #{friendGroup,jdbcType=INTEGER},
+      create_date = #{createDate,jdbcType=TIMESTAMP}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

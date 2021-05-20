@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="top.cxh.chat.mapper.MsgRecordMapper">
+  <resultMap id="BaseResultMap" type="top.cxh.chat.bean.MsgRecord">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="context" jdbcType="VARCHAR" property="context" />
+    <result column="from_account" jdbcType="VARCHAR" property="fromAccount" />
+    <result column="to_account" jdbcType="VARCHAR" property="toAccount" />
+    <result column="msg_type" jdbcType="VARCHAR" property="msgType" />
+    <result column="send_type" jdbcType="VARCHAR" property="sendType" />
+    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    <result column="msg_state" jdbcType="INTEGER" property="msgState" />
+  </resultMap>
+  <!-- 查询给我的验证消息 -->
+  <resultMap id="getMyReqMsg" type="top.cxh.chat.bean.MsgRecord">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="context" jdbcType="VARCHAR" property="context" />
+    <result column="from_account" jdbcType="VARCHAR" property="fromAccount" />
+    <result column="to_account" jdbcType="VARCHAR" property="toAccount" />
+    <result column="msg_type" jdbcType="VARCHAR" property="msgType" />
+    <result column="send_type" jdbcType="VARCHAR" property="sendType" />
+    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    <result column="msg_state" jdbcType="INTEGER" property="msgState" />
+    <association property="userInfo" javaType="top.cxh.chat.bean.UserInfo">
+    	<id column="account" jdbcType="VARCHAR" property="account" />
+	    <result column="user_name" jdbcType="VARCHAR" property="userName" />
+	    <result column="user_image" jdbcType="VARCHAR" property="userImage" />
+	    <result column="user_email" jdbcType="VARCHAR" property="userEmail" />
+	    <result column="user_phone" jdbcType="VARCHAR" property="userPhone" />
+	    <result column="province" jdbcType="VARCHAR" property="province" />
+	    <result column="city" jdbcType="VARCHAR" property="city" />
+	    <result column="county" jdbcType="VARCHAR" property="county" />
+	    <result column="location" jdbcType="VARCHAR" property="location" />
+	    <result column="lng" jdbcType="DOUBLE" property="lng" />
+	    <result column="lat" jdbcType="VARCHAR" property="lat" />
+	    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    </association>
+  </resultMap>
+  <select id="selectMyReqMsgByAccount" parameterType="java.lang.String" resultMap="getMyReqMsg">
+    select mr.id, mr.context, mr.from_account, mr.to_account, mr.msg_type, mr.send_type, mr.create_date, mr.msg_state,u.account, u.user_name, u.user_image, 
+    	u.user_email, u.user_phone, u.province, u.city, u.county, u.location,u.lng, u.lat, u.create_date 
+	from t_msg_record as mr LEFT JOIN t_userinfo u on mr.from_account = u.account 
+	where mr.to_account = #{account,jdbcType=VARCHAR} and mr.msg_type = 'req' and mr.send_type = 'self' 
+	ORDER BY mr.create_date DESC
+  </select>
+  <!-- END查询给我的验证消息 -->
+  
+  <!-- 查询给我的加群验证消息 -->
+  <resultMap id="getMyGroupReqMsg" type="top.cxh.chat.bean.MsgRecord">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="context" jdbcType="VARCHAR" property="context" />
+    <result column="from_account" jdbcType="VARCHAR" property="fromAccount" />
+    <result column="to_account" jdbcType="VARCHAR" property="toAccount" />
+    <result column="msg_type" jdbcType="VARCHAR" property="msgType" />
+    <result column="send_type" jdbcType="VARCHAR" property="sendType" />
+    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    <result column="msg_state" jdbcType="INTEGER" property="msgState" />
+    <association property="userInfo" javaType="top.cxh.chat.bean.UserInfo">
+    	<id column="account" jdbcType="VARCHAR" property="account" />
+	    <result column="user_name" jdbcType="VARCHAR" property="userName" />
+	    <result column="user_image" jdbcType="VARCHAR" property="userImage" />
+    </association>
+    <association property="groupChat" javaType="top.cxh.chat.bean.GroupChat">
+    	<id column="group_id" jdbcType="VARCHAR" property="groupId" />
+	    <result column="group_name" jdbcType="VARCHAR" property="groupName" />
+	    <result column="group_image" jdbcType="VARCHAR" property="groupImage" />
+	    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    </association>
+  </resultMap>
+  <select id="selectMyGroupReqMsgByAccount" parameterType="java.lang.String" resultMap="getMyGroupReqMsg">
+    select mr.id, mr.context, mr.from_account, mr.to_account, mr.msg_type, mr.send_type, 
+    		mr.create_date, mr.msg_state,u.account, u.user_name, u.user_image,
+    		gc.group_id, gc.group_name, gc.group_image, gc.create_date
+	from t_msg_record as mr JOIN t_userinfo u on mr.from_account = u.account JOIN t_group_chat gc on mr.to_account = gc.group_id 
+	where mr.to_account = #{groupId,jdbcType=VARCHAR} and mr.msg_type = 'req' and mr.send_type = 'group' 
+	ORDER BY mr.create_date DESC
+  </select>
+  <!-- END查询给我的加群验证消息 -->
+  
+  <sql id="Example_Where_Clause">
+    <where>
+      <foreach collection="oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause">
+    <where>
+      <foreach collection="example.oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List">
+    id, context, from_account, to_account, msg_type, send_type, create_date, msg_state
+  </sql>
+  <select id="selectByExample" parameterType="top.cxh.chat.bean.MsgRecordExample" resultMap="BaseResultMap">
+    select
+    <if test="distinct">
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from t_msg_record
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null">
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from t_msg_record
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_msg_record
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <delete id="deleteByExample" parameterType="top.cxh.chat.bean.MsgRecordExample">
+    delete from t_msg_record
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="top.cxh.chat.bean.MsgRecord">
+    insert into t_msg_record (id, context, from_account, 
+      to_account, msg_type, send_type, 
+      create_date, msg_state)
+    values (#{id,jdbcType=INTEGER}, #{context,jdbcType=VARCHAR}, #{fromAccount,jdbcType=VARCHAR}, 
+      #{toAccount,jdbcType=VARCHAR}, #{msgType,jdbcType=VARCHAR}, #{sendType,jdbcType=VARCHAR}, 
+      #{createDate,jdbcType=TIMESTAMP}, #{msgState,jdbcType=INTEGER})
+  </insert>
+  <insert id="insertSelective" parameterType="top.cxh.chat.bean.MsgRecord">
+    insert into t_msg_record
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="context != null">
+        context,
+      </if>
+      <if test="fromAccount != null">
+        from_account,
+      </if>
+      <if test="toAccount != null">
+        to_account,
+      </if>
+      <if test="msgType != null">
+        msg_type,
+      </if>
+      <if test="sendType != null">
+        send_type,
+      </if>
+      <if test="createDate != null">
+        create_date,
+      </if>
+      <if test="msgState != null">
+        msg_state,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="context != null">
+        #{context,jdbcType=VARCHAR},
+      </if>
+      <if test="fromAccount != null">
+        #{fromAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="toAccount != null">
+        #{toAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="msgType != null">
+        #{msgType,jdbcType=VARCHAR},
+      </if>
+      <if test="sendType != null">
+        #{sendType,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null">
+        #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="msgState != null">
+        #{msgState,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="top.cxh.chat.bean.MsgRecordExample" resultType="java.lang.Long">
+    select count(*) from t_msg_record
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map">
+    update t_msg_record
+    <set>
+      <if test="record.id != null">
+        id = #{record.id,jdbcType=INTEGER},
+      </if>
+      <if test="record.context != null">
+        context = #{record.context,jdbcType=VARCHAR},
+      </if>
+      <if test="record.fromAccount != null">
+        from_account = #{record.fromAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="record.toAccount != null">
+        to_account = #{record.toAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="record.msgType != null">
+        msg_type = #{record.msgType,jdbcType=VARCHAR},
+      </if>
+      <if test="record.sendType != null">
+        send_type = #{record.sendType,jdbcType=VARCHAR},
+      </if>
+      <if test="record.createDate != null">
+        create_date = #{record.createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="record.msgState != null">
+        msg_state = #{record.msgState,jdbcType=INTEGER},
+      </if>
+    </set>
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map">
+    update t_msg_record
+    set id = #{record.id,jdbcType=INTEGER},
+      context = #{record.context,jdbcType=VARCHAR},
+      from_account = #{record.fromAccount,jdbcType=VARCHAR},
+      to_account = #{record.toAccount,jdbcType=VARCHAR},
+      msg_type = #{record.msgType,jdbcType=VARCHAR},
+      send_type = #{record.sendType,jdbcType=VARCHAR},
+      create_date = #{record.createDate,jdbcType=TIMESTAMP},
+      msg_state = #{record.msgState,jdbcType=INTEGER}
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="top.cxh.chat.bean.MsgRecord">
+    update t_msg_record
+    <set>
+      <if test="context != null">
+        context = #{context,jdbcType=VARCHAR},
+      </if>
+      <if test="fromAccount != null">
+        from_account = #{fromAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="toAccount != null">
+        to_account = #{toAccount,jdbcType=VARCHAR},
+      </if>
+      <if test="msgType != null">
+        msg_type = #{msgType,jdbcType=VARCHAR},
+      </if>
+      <if test="sendType != null">
+        send_type = #{sendType,jdbcType=VARCHAR},
+      </if>
+      <if test="createDate != null">
+        create_date = #{createDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="msgState != null">
+        msg_state = #{msgState,jdbcType=INTEGER},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="top.cxh.chat.bean.MsgRecord">
+    update t_msg_record
+    set context = #{context,jdbcType=VARCHAR},
+      from_account = #{fromAccount,jdbcType=VARCHAR},
+      to_account = #{toAccount,jdbcType=VARCHAR},
+      msg_type = #{msgType,jdbcType=VARCHAR},
+      send_type = #{sendType,jdbcType=VARCHAR},
+      create_date = #{createDate,jdbcType=TIMESTAMP},
+      msg_state = #{msgState,jdbcType=INTEGER}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>

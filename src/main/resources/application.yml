@@ -1,0 +1,40 @@
+server:
+  port: 9000
+ 
+spring:
+  datasource:
+      url: jdbc:mysql://localhost:3306/db_blueseachat?useUnicode=true&characterEncoding=UTF-8&serverTimezone=GMT&useSSL=false
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      username: root
+      password: 123456
+      type: com.alibaba.druid.pool.DruidDataSourceC3P0Adapter
+      druid:
+        initialSize: 5
+        minIdle: 5
+        maxActive: 20
+        maxWait: 60000
+        timeBetweenEvictionRunsMillis: 60000
+        minEvictableIdleTimeMillis: 300000
+        validationQuery: SELECT 1 FROM DUAL
+        testWhileIdle: true
+        testOnBorrow: false
+        testOnReturn: false
+        poolPreparedStatements: true
+        filters: stat,wall,log4j
+        maxPoolPreparedStatementPerConnectionSize: 20
+        useGlobalDataSourceStat: true
+        connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=500
+  resources:
+    static-locations: file:F:/images/BlueSeaChat/
+  mvc:
+    static-path-pattern: /**
+  servlet: 
+    multipart: 
+      enabled: true
+      max-file-size: 1GB # 单个文件的最大值
+      max-request-size: 10GB # 上传文件总的最大值
+ 
+mybatis:
+  mapper-locations: classpath:mapping/*Mapper.xml
+  type-aliases-package: top.cxh.chat.bean
+

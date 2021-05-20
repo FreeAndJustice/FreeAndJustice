@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="top.cxh.chat.mapper.GroupUserMapper">
+  <resultMap id="BaseResultMap" type="top.cxh.chat.bean.GroupUser">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="account" jdbcType="VARCHAR" property="account" />
+    <result column="group_role" jdbcType="INTEGER" property="groupRole" />
+    <result column="group_id" jdbcType="VARCHAR" property="groupId" />
+  </resultMap>
+  
+  <!-- 获取我所在的群 -->
+  <resultMap id="getMyGroups" type="top.cxh.chat.bean.GroupUser">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="account" jdbcType="VARCHAR" property="account" />
+    <result column="group_role" jdbcType="INTEGER" property="groupRole" />
+    <result column="group_id" jdbcType="VARCHAR" property="groupId" />
+    <association property="groupChat" javaType="top.cxh.chat.bean.GroupChat">
+    	<id column="group_id" jdbcType="VARCHAR" property="groupId" />
+	    <result column="group_name" jdbcType="VARCHAR" property="groupName" />
+	    <result column="group_image" jdbcType="VARCHAR" property="groupImage" />
+	    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    </association>
+  </resultMap>
+  <select id="selectMyGroups" parameterType="java.lang.String" resultMap="getMyGroups">
+    select gu.id, gu.account, gu.group_role, gu.group_id,gc.group_id, gc.group_name, gc.group_image, gc.create_date
+    from t_group_user gu JOIN t_group_chat gc on gu.group_id = gc.group_id
+    where gu.account = #{account,jdbcType=VARCHAR}
+    ORDER BY gc.group_name
+  </select>
+  <!-- END获取我所在的群 -->
+  
+  <!-- 群成员信息查询 -->
+  <resultMap id="getGroupUserInfo" type="top.cxh.chat.bean.GroupUser">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="account" jdbcType="VARCHAR" property="account" />
+    <result column="group_role" jdbcType="INTEGER" property="groupRole" />
+    <result column="group_id" jdbcType="VARCHAR" property="groupId" />
+    <association property="userInfo" javaType="top.cxh.chat.bean.UserInfo">
+    	<id column="account" jdbcType="VARCHAR" property="account" />
+	    <result column="user_name" jdbcType="VARCHAR" property="userName" />
+	    <result column="user_image" jdbcType="VARCHAR" property="userImage" />
+	    <result column="user_email" jdbcType="VARCHAR" property="userEmail" />
+	    <result column="user_phone" jdbcType="VARCHAR" property="userPhone" />
+	    <result column="province" jdbcType="VARCHAR" property="province" />
+	    <result column="city" jdbcType="VARCHAR" property="city" />
+	    <result column="county" jdbcType="VARCHAR" property="county" />
+	    <result column="location" jdbcType="VARCHAR" property="location" />
+	    <result column="lng" jdbcType="DOUBLE" property="lng" />
+	    <result column="lat" jdbcType="DOUBLE" property="lat" />
+	    <result column="create_date" jdbcType="TIMESTAMP" property="createDate" />
+    </association>
+  </resultMap>
+  <select id="selectGroupUserInfo" parameterType="java.lang.String" resultMap="getGroupUserInfo">
+    select gu.id, gu.account, gu.group_role, gu.group_id,ui.account, ui.user_name, ui.user_image 
+    from t_group_user gu JOIN t_userinfo ui on gu.account = ui.account
+    where gu.group_id = #{groupId,jdbcType=VARCHAR}
+    ORDER BY ui.user_name
+  </select>
+  <!-- END群成员信息查询 -->
+  
+  <sql id="Example_Where_Clause">
+    <where>
+      <foreach collection="oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Update_By_Example_Where_Clause">
+    <where>
+      <foreach collection="example.oredCriteria" item="criteria" separator="or">
+        <if test="criteria.valid">
+          <trim prefix="(" prefixOverrides="and" suffix=")">
+            <foreach collection="criteria.criteria" item="criterion">
+              <choose>
+                <when test="criterion.noValue">
+                  and ${criterion.condition}
+                </when>
+                <when test="criterion.singleValue">
+                  and ${criterion.condition} #{criterion.value}
+                </when>
+                <when test="criterion.betweenValue">
+                  and ${criterion.condition} #{criterion.value} and #{criterion.secondValue}
+                </when>
+                <when test="criterion.listValue">
+                  and ${criterion.condition}
+                  <foreach close=")" collection="criterion.value" item="listItem" open="(" separator=",">
+                    #{listItem}
+                  </foreach>
+                </when>
+              </choose>
+            </foreach>
+          </trim>
+        </if>
+      </foreach>
+    </where>
+  </sql>
+  <sql id="Base_Column_List">
+    id, account, group_role, group_id
+  </sql>
+  <select id="selectByExample" parameterType="top.cxh.chat.bean.GroupUserExample" resultMap="BaseResultMap">
+    select
+    <if test="distinct">
+      distinct
+    </if>
+    <include refid="Base_Column_List" />
+    from t_group_user
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+    <if test="orderByClause != null">
+      order by ${orderByClause}
+    </if>
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from t_group_user
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_group_user
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <delete id="deleteByExample" parameterType="top.cxh.chat.bean.GroupUserExample">
+    delete from t_group_user
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </delete>
+  <insert id="insert" parameterType="top.cxh.chat.bean.GroupUser">
+    insert into t_group_user (id, account, group_role, 
+      group_id)
+    values (#{id,jdbcType=INTEGER}, #{account,jdbcType=VARCHAR}, #{groupRole,jdbcType=INTEGER}, 
+      #{groupId,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="top.cxh.chat.bean.GroupUser">
+    insert into t_group_user
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="account != null">
+        account,
+      </if>
+      <if test="groupRole != null">
+        group_role,
+      </if>
+      <if test="groupId != null">
+        group_id,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="account != null">
+        #{account,jdbcType=VARCHAR},
+      </if>
+      <if test="groupRole != null">
+        #{groupRole,jdbcType=INTEGER},
+      </if>
+      <if test="groupId != null">
+        #{groupId,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <select id="countByExample" parameterType="top.cxh.chat.bean.GroupUserExample" resultType="java.lang.Long">
+    select count(*) from t_group_user
+    <if test="_parameter != null">
+      <include refid="Example_Where_Clause" />
+    </if>
+  </select>
+  <update id="updateByExampleSelective" parameterType="map">
+    update t_group_user
+    <set>
+      <if test="record.id != null">
+        id = #{record.id,jdbcType=INTEGER},
+      </if>
+      <if test="record.account != null">
+        account = #{record.account,jdbcType=VARCHAR},
+      </if>
+      <if test="record.groupRole != null">
+        group_role = #{record.groupRole,jdbcType=INTEGER},
+      </if>
+      <if test="record.groupId != null">
+        group_id = #{record.groupId,jdbcType=VARCHAR},
+      </if>
+    </set>
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByExample" parameterType="map">
+    update t_group_user
+    set id = #{record.id,jdbcType=INTEGER},
+      account = #{record.account,jdbcType=VARCHAR},
+      group_role = #{record.groupRole,jdbcType=INTEGER},
+      group_id = #{record.groupId,jdbcType=VARCHAR}
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
+  <update id="updateByPrimaryKeySelective" parameterType="top.cxh.chat.bean.GroupUser">
+    update t_group_user
+    <set>
+      <if test="account != null">
+        account = #{account,jdbcType=VARCHAR},
+      </if>
+      <if test="groupRole != null">
+        group_role = #{groupRole,jdbcType=INTEGER},
+      </if>
+      <if test="groupId != null">
+        group_id = #{groupId,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="top.cxh.chat.bean.GroupUser">
+    update t_group_user
+    set account = #{account,jdbcType=VARCHAR},
+      group_role = #{groupRole,jdbcType=INTEGER},
+      group_id = #{groupId,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>
